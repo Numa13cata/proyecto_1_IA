@@ -64,14 +64,18 @@ rating(u4, p4, 5).  rating(u4, p10,4).  rating(u4, p7, 2).
 rating(u5, p8, 5).  rating(u5, p7, 4).  rating(u5, p9, 2).
 rating(u6, p2, 5).  rating(u6, p6, 4).  rating(u6, p5, 3).
 
-%% ==== Popularidad global de un producto (cantidad de ratings) ====
+% =========================
+% Reglas de recomendación
+% =========================
+
+% ==== Popularidad global de un producto (cantidad de ratings) ====
 product_popularity(P, Count) :-
     findall(Score, rating(_, P, Score), Scores),
     length(Scores, Count).
 
 % ==== Popularidad global de una categoría ====
 category_popularity(C, Count) :-
-    findall(U, (bought(U, P), product(P, _, C)), Users),
+    findall(U, (bought(U, P), product(P, C)), Users),
     length(Users, Count).
 
 % ==== Caso A: Usuario sin compras → producto mas popular ====
@@ -83,19 +87,19 @@ recommend_one(User, Product) :-
 % ==== Caso B: Usuario con 1 compra → otro de la misma categoría ====
 recommend_one(User, Product) :-
     findall(P, bought(User, P), [OnlyProduct]),
-    product(OnlyProduct, _, C),
-    product(Product, _, C),
+    product(OnlyProduct, C),
+    product(Product, C),
     Product \= OnlyProduct.
 
 % ==== Caso C: Usuario con varias compras → mejor calificación ====
 recommend_one(User, Product) :-
     findall(Score-P, rating(User, P, Score), Ratings),
-    sort(Ratings, Sorted),  
+    sort(Ratings, Sorted),
     reverse(Sorted, [BestScore-BestProduct|Rest]),
     (   % ==== Caso D: Empate de calificación ====
         member(BestScore-OtherProduct, Rest)
-    ->  product(BestProduct, _, C1),
-        product(OtherProduct, _, C2),
+    ->  product(BestProduct, C1),
+        product(OtherProduct, C2),
         category_popularity(C1, Pop1),
         category_popularity(C2, Pop2),
         (Pop1 >= Pop2 -> Product = BestProduct ; Product = OtherProduct)
